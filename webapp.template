@@ -1,0 +1,663 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "WebApp for AWS v1.0.0 - by Supercharge",
+    "Metadata": {
+        "AWS::CloudFormation::Interface": {
+            "ParameterGroups": [
+                {
+                    "Label": {
+                        "default": "CloudFront Distribution Settings"
+                    },
+                    "Parameters": [
+                        "PriceClass",
+                        "ViewerProtocolPolicy"
+                    ]
+                },
+                {
+                    "Label": {
+                        "default": "HTTP Basic Authentication"
+                    },
+                    "Parameters": [
+                        "AuthEnabled",
+                        "AuthUsername",
+                        "AuthPassword"
+                    ]
+                }
+            ],
+            "ParameterLabels": {
+                "PriceClass": {
+                    "default": "Price Class"
+                },
+                "ViewerProtocolPolicy": {
+                    "default": "Viewer Protocol Policy"
+                },
+                "AuthEnabled": {
+                    "default": "Do you want to enable authentication?"
+                },
+                "AuthUsername": {
+                    "default": "Username"
+                },
+                "AuthPassword": {
+                    "default": "Password"
+                }
+            }
+        },
+        "AWS::CloudFormation::Designer": {
+            "839d3dc2-f281-4e08-9cf6-408c230dce53": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 30,
+                    "y": 230
+                },
+                "z": 1,
+                "embeds": []
+            },
+            "0cb9e73c-351a-4476-850b-8703f1940093": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 30,
+                    "y": 130
+                },
+                "z": 1,
+                "embeds": []
+            },
+            "cf2b9eb5-1fdc-4183-b5fe-8d284ac578da": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 160,
+                    "y": 330
+                },
+                "z": 1,
+                "embeds": []
+            },
+            "bfa4dd0a-1034-4934-9fd2-c5867a1a2ae5": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 30,
+                    "y": 330
+                },
+                "z": 1,
+                "embeds": [],
+                "isassociatedwith": [
+                    "839d3dc2-f281-4e08-9cf6-408c230dce53"
+                ]
+            },
+            "12c16e78-0416-4049-ab08-bb4beda53ba8": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 160,
+                    "y": 230
+                },
+                "z": 15,
+                "embeds": []
+            },
+            "290166c8-8291-4843-b09f-d7920f1a94cc": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 260,
+                    "y": 330
+                },
+                "z": 1,
+                "embeds": [],
+                "isassociatedwith": [
+                    "cf2b9eb5-1fdc-4183-b5fe-8d284ac578da"
+                ]
+            },
+            "d73ed503-9642-4d95-aa5e-2b4625266142": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 260,
+                    "y": 230
+                },
+                "z": 1,
+                "embeds": []
+            },
+            "ec4cb6a2-5b11-48ce-9b31-8f32c39704c8": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 390,
+                    "y": 330
+                },
+                "z": 1,
+                "embeds": []
+            },
+            "9bea0937-593c-4b39-8f35-0013b428ff94": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 390,
+                    "y": 230
+                },
+                "z": 1,
+                "embeds": []
+            },
+            "9b50090b-a8da-4ea7-987e-5afce3519212": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 390,
+                    "y": 130
+                },
+                "z": 1,
+                "embeds": [],
+                "isassociatedwith": [
+                    "9bea0937-593c-4b39-8f35-0013b428ff94"
+                ]
+            }
+        }
+    },
+    "Resources": {
+        "Owner": {
+            "Type": "AWS::IAM::User",
+            "Properties": {},
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "839d3dc2-f281-4e08-9cf6-408c230dce53"
+                }
+            }
+        },
+        "OwnerKey": {
+            "Type": "AWS::IAM::AccessKey",
+            "Properties": {
+                "UserName": {
+                    "Ref": "Owner"
+                }
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "0cb9e73c-351a-4476-850b-8703f1940093"
+                }
+            },
+            "DependsOn": []
+        },
+        "Source": {
+            "Type": "AWS::S3::Bucket",
+            "Properties": {
+                "AccessControl": "Private"
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "cf2b9eb5-1fdc-4183-b5fe-8d284ac578da"
+                }
+            }
+        },
+        "OwnerPermission": {
+            "Type": "AWS::IAM::Policy",
+            "Properties": {
+                "PolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Sid": "1",
+                            "Action": [
+                                "s3:PutObject",
+                                "s3:PutObjectAcl"
+                            ],
+                            "Effect": "Allow",
+                            "Resource": {
+                                "Fn::Join": [
+                                    "",
+                                    [
+                                        "arn:aws:s3:::",
+                                        {
+                                            "Ref": "Source"
+                                        },
+                                        "/*"
+                                    ]
+                                ]
+                            }
+                        },
+                        {
+                            "Sid": "2",
+                            "Action": [
+                                "cloudfront:CreateInvalidation",
+                                "cloudfront:GetInvalidation"
+                            ],
+                            "Effect": "Allow",
+                            "Resource": "*"
+                        }
+                    ]
+                },
+                "PolicyName": "deploy",
+                "Users": [
+                    {
+                        "Ref": "Owner"
+                    }
+                ]
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "bfa4dd0a-1034-4934-9fd2-c5867a1a2ae5"
+                }
+            },
+            "DependsOn": []
+        },
+        "Edge": {
+            "Type": "AWS::CloudFront::Distribution",
+            "Properties": {
+                "DistributionConfig": {
+                    "DefaultRootObject": "index.html",
+                    "Enabled": true,
+                    "HttpVersion": "http2",
+                    "Origins": [
+                        {
+                            "DomainName": {
+                                "Fn::GetAtt": [
+                                    "Source",
+                                    "DomainName"
+                                ]
+                            },
+                            "Id": "source",
+                            "S3OriginConfig": {
+                                "OriginAccessIdentity": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "origin-access-identity/cloudfront/",
+                                            {
+                                                "Ref": "Identity"
+                                            }
+                                        ]
+                                    ]
+                                }
+                            }
+                        }
+                    ],
+                    "CustomErrorResponses": [
+                        {
+                            "ErrorCachingMinTTL": 300,
+                            "ErrorCode": 403,
+                            "ResponseCode": 200,
+                            "ResponsePagePath": "/index.html"
+                        }
+                    ],
+                    "PriceClass": {
+                        "Fn::FindInMap": [
+                            "PriceClassMapping",
+                            {
+                                "Ref": "PriceClass"
+                            },
+                            "Name"
+                        ]
+                    },
+                    "DefaultCacheBehavior": {
+                        "Compress": true,
+                        "ForwardedValues": {
+                            "QueryString": false
+                        },
+                        "TargetOriginId": "source",
+                        "ViewerProtocolPolicy": {
+                            "Fn::FindInMap": [
+                                "VPPMapping",
+                                {
+                                    "Ref": "ViewerProtocolPolicy"
+                                },
+                                "Name"
+                            ]
+                        },
+                        "MinTTL": 31536000,
+                        "MaxTTL": 31536000,
+                        "DefaultTTL": 31536000,
+                        "LambdaFunctionAssociations": {
+                            "Fn::If": [
+                                "IsAuthEnabled",
+                                [
+                                    {
+                                        "EventType": "viewer-request",
+                                        "LambdaFunctionARN": {
+                                            "Ref": "AuthVersion"
+                                        }
+                                    }
+                                ],
+                                {
+                                    "Ref": "AWS::NoValue"
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "12c16e78-0416-4049-ab08-bb4beda53ba8"
+                }
+            },
+            "DependsOn": []
+        },
+        "Fetch": {
+            "Type": "AWS::S3::BucketPolicy",
+            "Properties": {
+                "Bucket": {
+                    "Ref": "Source"
+                },
+                "PolicyDocument": {
+                    "Id": "CloudFrontPrivatePolicy",
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Sid": "1",
+                            "Action": [
+                                "s3:GetObject"
+                            ],
+                            "Effect": "Allow",
+                            "Resource": {
+                                "Fn::Join": [
+                                    "",
+                                    [
+                                        "arn:aws:s3:::",
+                                        {
+                                            "Ref": "Source"
+                                        },
+                                        "/*"
+                                    ]
+                                ]
+                            },
+                            "Principal": {
+                                "CanonicalUser": {
+                                    "Fn::GetAtt": [
+                                        "Identity",
+                                        "S3CanonicalUserId"
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                }
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "290166c8-8291-4843-b09f-d7920f1a94cc"
+                }
+            },
+            "DependsOn": []
+        },
+        "Identity": {
+            "Type": "AWS::CloudFront::CloudFrontOriginAccessIdentity",
+            "Properties": {
+                "CloudFrontOriginAccessIdentityConfig": {
+                    "Comment": {
+                        "Ref": "AWS::StackName"
+                    }
+                }
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "d73ed503-9642-4d95-aa5e-2b4625266142"
+                }
+            }
+        },
+        "AuthExecutionRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "lambda.amazonaws.com",
+                                    "edgelambda.amazonaws.com"
+                                ]
+                            },
+                            "Action": "sts:AssumeRole"
+                        }
+                    ]
+                },
+                "ManagedPolicyArns": [
+                    "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+                ]
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "ec4cb6a2-5b11-48ce-9b31-8f32c39704c8"
+                }
+            },
+            "Condition": "IsAuthEnabled"
+        },
+        "AuthFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+                "Description": "Basic HTTP authentication for a CloudFront distribution",
+                "Role": {
+                    "Fn::GetAtt": [
+                        "AuthExecutionRole",
+                        "Arn"
+                    ]
+                },
+                "Runtime": "nodejs6.10",
+                "Handler": "index.handler",
+                "Code": {
+                    "ZipFile": {
+                        "Fn::Join": [
+                            "\n",
+                            [
+                                "'use strict';",
+                                "",
+                                "// Configure authentication",
+                                {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "const authUser = '",
+                                            {
+                                                "Ref": "AuthUsername"
+                                            },
+                                            "';"
+                                        ]
+                                    ]
+                                },
+                                {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "const authPass = '",
+                                            {
+                                                "Ref": "AuthPassword"
+                                            },
+                                            "';"
+                                        ]
+                                    ]
+                                },
+                                "",
+                                "// Construct the Basic Auth string",
+                                "const authString = 'Basic ' + new Buffer(authUser + ':' + authPass).toString('base64');",
+                                "",
+                                "exports.handler = (event, context, callback) => {",
+                                "    // Get request and request headers",
+                                "    const request = event.Records[0].cf.request;",
+                                "    const headers = request.headers;",
+                                "",
+                                "    // Require Basic authentication",
+                                "    if (typeof headers.authorization == 'undefined' || headers.authorization[0].value != authString) {",
+                                "        const body = 'Unauthorized';",
+                                "        const response = {",
+                                "            status: '401',",
+                                "            statusDescription: 'Unauthorized',",
+                                "            body: body,",
+                                "            headers: {",
+                                "                'www-authenticate': [{key: 'WWW-Authenticate', value:'Basic'}]",
+                                "            },",
+                                "        };",
+                                "        callback(null, response);",
+                                "    }",
+                                "",
+                                "    // Continue request processing if authentication passed",
+                                "    callback(null, request);",
+                                "};"
+                            ]
+                        ]
+                    }
+                }
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "9bea0937-593c-4b39-8f35-0013b428ff94"
+                }
+            },
+            "DependsOn": [],
+            "Condition": "IsAuthEnabled"
+        },
+        "AuthVersion": {
+            "Type": "AWS::Lambda::Version",
+            "Properties": {
+                "FunctionName": {
+                    "Fn::GetAtt": [
+                        "AuthFunction",
+                        "Arn"
+                    ]
+                }
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "9b50090b-a8da-4ea7-987e-5afce3519212"
+                }
+            },
+            "DependsOn": [],
+            "Condition": "IsAuthEnabled"
+        }
+    },
+    "Outputs": {
+        "AccessKeyId": {
+            "Value": {
+                "Ref": "OwnerKey"
+            }
+        },
+        "AccessKeySecret": {
+            "Value": {
+                "Fn::GetAtt": [
+                    "OwnerKey",
+                    "SecretAccessKey"
+                ]
+            }
+        },
+        "BucketName": {
+            "Value": {
+                "Ref": "Source"
+            }
+        },
+        "DistributionId": {
+            "Value": {
+                "Ref": "Edge"
+            }
+        },
+        "DistributionDomain": {
+            "Value": {
+                "Fn::GetAtt": [
+                    "Edge",
+                    "DomainName"
+                ]
+            }
+        },
+        "AuthUsername": {
+            "Value": {
+                "Ref": "AuthUsername"
+            }
+        },
+        "AuthPassword": {
+            "Value": {
+                "Ref": "AuthPassword"
+            }
+        }
+    },
+    "Parameters": {
+        "PriceClass": {
+            "Type": "String",
+            "Default": "AllEdgeLocations",
+            "AllowedValues": [
+                "OnlyUSCanadaEurope",
+                "OnlyUSCanadaEuropeAsia",
+                "AllEdgeLocations"
+            ],
+            "Description": "Select the price class associated with the maximum price that you want to pay for CloudFront service. If you select a price class other than All, some of your users may experience higher latency."
+        },
+        "ViewerProtocolPolicy": {
+            "Type": "String",
+            "Default": "RedirectHTTPtoHTTPS",
+            "AllowedValues": [
+                "HTTPandHTTPS",
+                "RedirectHTTPtoHTTPS",
+                "HTTPSOnly"
+            ],
+            "Description": "If you want CloudFront to allow viewers to access your web content using either HTTP or HTTPS, specify HTTP and HTTPS. If you want CloudFront to redirect all HTTP requests to HTTPS, specify Redirect HTTP to HTTPS. If you want CloudFront to require HTTPS, specify HTTPS Only."
+        },
+        "AuthEnabled": {
+            "Type": "String",
+            "Default": "no",
+            "AllowedValues": [
+                "yes",
+                "no"
+            ],
+            "Description": "Enable HTTP Basic authentication which will protect all resources with username/password credentials."
+        },
+        "AuthUsername": {
+            "Type": "String"
+        },
+        "AuthPassword": {
+            "Type": "String",
+            "Description": "Changing credentials once the stack is created: (1) disable authentication with a stack update (2) re-enable authentication and change credentials with a second update"
+        }
+    },
+    "Conditions": {
+        "IsAuthEnabled": {
+            "Fn::Equals": [
+                {
+                    "Ref": "AuthEnabled"
+                },
+                "yes"
+            ]
+        }
+    },
+    "Mappings": {
+        "PriceClassMapping": {
+            "OnlyUSCanadaEurope": {
+                "Name": "PriceClass_100"
+            },
+            "OnlyUSCanadaEuropeAsia": {
+                "Name": "PriceClass_200"
+            },
+            "AllEdgeLocations": {
+                "Name": "PriceClass_All"
+            }
+        },
+        "VPPMapping": {
+            "HTTPandHTTPS": {
+                "Name": "allow-all"
+            },
+            "RedirectHTTPtoHTTPS": {
+                "Name": "redirect-to-https"
+            },
+            "HTTPSOnly": {
+                "Name": "https-only"
+            }
+        }
+    }
+}
