@@ -10,7 +10,9 @@
                     },
                     "Parameters": [
                         "PriceClass",
-                        "ViewerProtocolPolicy"
+                        "ViewerProtocolPolicy",
+                        "CNAMEs",
+                        "SSLCertificateARN"
                     ]
                 },
                 {
@@ -30,6 +32,12 @@
                 },
                 "ViewerProtocolPolicy": {
                     "default": "Viewer Protocol Policy"
+                },
+                "CNAMEs": {
+                    "default": "Alternate Domain Names"
+                },
+                "SSLCertificateARN": {
+                    "default": "SSL Certificate"
                 },
                 "AuthEnabled": {
                     "default": "Do you want to enable authentication?"
@@ -264,6 +272,15 @@
             "Type": "AWS::CloudFront::Distribution",
             "Properties": {
                 "DistributionConfig": {
+                    "Aliases": {
+                        "Ref": "CNAMEs"
+                    },
+                    "ViewerCertificate": {
+                        "AcmCertificateArn": {
+                            "Ref": "SSLCertificateARN"
+                        },
+                        "SslSupportMethod": "sni-only"
+                    },
                     "DefaultRootObject": "index.html",
                     "Enabled": true,
                     "HttpVersion": "http2",
@@ -608,6 +625,16 @@
                 "HTTPSOnly"
             ],
             "Description": "If you want CloudFront to allow viewers to access your web content using either HTTP or HTTPS, specify HTTP and HTTPS. If you want CloudFront to redirect all HTTP requests to HTTPS, specify Redirect HTTP to HTTPS. If you want CloudFront to require HTTPS, specify HTTPS Only."
+        },
+        "CNAMEs": {
+            "Type": "CommaDelimitedList",
+            "Default": "",
+            "Description": "List of custom domain names (e.g 'example.com,www.example.com') that you use in addition to the CloudFront domain name (e.g 'd1234.cloudfront.net'). You must create CNAME records with your DNS service e.g example.com to d1234.cloudfront.net"
+        },
+        "SSLCertificateARN": {
+            "Type": "String",
+            "Default": "",
+            "Description": "ARN for custom SSL certificate to use for CNAMEs. Use the AWS Certificate Manager (ACM) service to provision and manage your certificates."
         },
         "AuthEnabled": {
             "Type": "String",
