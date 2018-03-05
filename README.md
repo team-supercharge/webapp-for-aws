@@ -20,7 +20,6 @@ To quickly create a stack with the latest version click on the button below.
 
 # Contents
 
-* [Parameters](#parameters)
 * [Outputs](#outputs)
 * [Authors](#authors)
 * [License](#license)
@@ -34,6 +33,8 @@ To quickly create a stack with the latest version click on the button below.
 | `BucketName` | Name of S3 bucket |
 | `DistributionId` | ID of the CloudFront distribution |
 | `DistributionDomain` | Domain name for the CloudFront the distribution |
+| `AuthUsername` | Current basic auth username |
+| `AuthPassword` | Current basic auth password |
 
 # Authors
 
