@@ -273,13 +273,29 @@
             "Properties": {
                 "DistributionConfig": {
                     "Aliases": {
-                        "Ref": "CNAMEs"
+                        "Fn::If": [
+                            "IsCNAMEsDefined",
+                            {
+                                "Ref": "CNAMEs"
+                            },
+                            {
+                                "Ref": "AWS::NoValue"
+                            }
+                        ]
                     },
                     "ViewerCertificate": {
-                        "AcmCertificateArn": {
-                            "Ref": "SSLCertificateARN"
-                        },
-                        "SslSupportMethod": "sni-only"
+                        "Fn::If": [
+                            "IsSSLCertificateARNDefined",
+                            {
+                                "AcmCertificateArn": {
+                                    "Ref": "SSLCertificateARN"
+                                },
+                                "SslSupportMethod": "sni-only"
+                            },
+                            {
+                                "Ref": "AWS::NoValue"
+                            }
+                        ]
                     },
                     "DefaultRootObject": "index.html",
                     "Enabled": true,
@@ -660,6 +676,35 @@
                     "Ref": "AuthEnabled"
                 },
                 "yes"
+            ]
+        },
+        "IsCNAMEsDefined": {
+            "Fn::Not": [
+                {
+                    "Fn::Equals": [
+                        "",
+                        {
+                            "Fn::Select": [
+                                "0",
+                                {
+                                    "Ref": "CNAMEs"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "IsSSLCertificateARNDefined": {
+            "Fn::Not": [
+                {
+                    "Fn::Equals": [
+                        "",
+                        {
+                            "Ref": "SSLCertificateARN"
+                        }
+                    ]
+                }
             ]
         }
     },
