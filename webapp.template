@@ -326,7 +326,7 @@
                     ],
                     "CustomErrorResponses": [
                         {
-                            "ErrorCachingMinTTL": 300,
+                            "ErrorCachingMinTTL": 0,
                             "ErrorCode": 403,
                             "ResponseCode": 200,
                             "ResponsePagePath": "/index.html"
@@ -356,9 +356,9 @@
                                 "Name"
                             ]
                         },
-                        "MinTTL": 31536000,
+                        "MinTTL": 0,
                         "MaxTTL": 31536000,
-                        "DefaultTTL": 31536000,
+                        "DefaultTTL": 86400,
                         "LambdaFunctionAssociations": {
                             "Fn::If": [
                                 "IsAuthEnabled",
