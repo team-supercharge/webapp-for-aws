@@ -20,9 +20,19 @@ To quickly create a stack with the latest version click on the button below.
 
 # Contents
 
+* [Authentication](#authentication)
 * [Outputs](#outputs)
 * [Authors](#authors)
 * [License](#license)
+
+# Authentication
+
+With **WebApp for AWS** you can easily configure authentication using a [Lambda@Edge](https://docs.aws.amazon.com/lambda/latest/dg/lambda-edge.html) function under the hood. If you enable it you have the option to
+
+1. specify a list of IP addresses to whitelist
+2. define a list of valid credentials in `<username>:<password>` format
+
+> **IMPORTANT:** Due to technical limitations in CloudFormation and [Lambda Function Versioning](https://docs.aws.amazon.com/lambda/latest/dg/versioning-aliases.html) you need to increment the **Version ID** counter during a stack update every time you change whitelisted IPs or credentials!
 
 # Outputs
 
@@ -33,8 +43,10 @@ To quickly create a stack with the latest version click on the button below.
 | `BucketName` | Name of S3 bucket |
 | `DistributionId` | ID of the CloudFront distribution |
 | `DistributionDomain` | Domain name for the CloudFront the distribution |
-| `AuthUsername` | Current basic auth username |
-| `AuthPassword` | Current basic auth password |
+| `AuthEnabled` | Authentication enabled (yes or no) |
+| `AuthId` | Version ID of auth credentials |
+| `AuthIpWhitelist` | Whitelisted IP addresses |
+| `AuthCredentials` | HTTP Basic auth credentials in <username>:<password> format |
 
 # Authors
 

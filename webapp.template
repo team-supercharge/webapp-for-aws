@@ -17,12 +17,13 @@
                 },
                 {
                     "Label": {
-                        "default": "HTTP Basic Authentication"
+                        "default": "Authentication"
                     },
                     "Parameters": [
                         "AuthEnabled",
-                        "AuthUsername",
-                        "AuthPassword"
+                        "AuthId",
+                        "AuthIpWhitelist",
+                        "AuthCredentials"
                     ]
                 }
             ],
@@ -42,11 +43,14 @@
                 "AuthEnabled": {
                     "default": "Do you want to enable authentication?"
                 },
-                "AuthUsername": {
-                    "default": "Username"
+                "AuthId": {
+                    "default": "Version ID"
                 },
-                "AuthPassword": {
-                    "default": "Password"
+                "AuthIpWhitelist": {
+                    "default": "IP Whitelist"
+                },
+                "AuthCredentials": {
+                    "default": "Credentials"
                 }
             }
         },
@@ -479,7 +483,23 @@
         "AuthFunction": {
             "Type": "AWS::Lambda::Function",
             "Properties": {
-                "Description": "Basic HTTP authentication for a CloudFront distribution",
+                "FunctionName": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            {
+                                "Ref": "AWS::StackName"
+                            },
+                            "-",
+                            "AuthFunction",
+                            "-",
+                            {
+                                "Ref": "AuthId"
+                            }
+                        ]
+                    ]
+                },
+                "Description": "Authentication (IP whitelist or HTTP Basic) for a CloudFront distribution",
                 "Role": {
                     "Fn::GetAtt": [
                         "AuthExecutionRole",
@@ -495,42 +515,62 @@
                             [
                                 "'use strict';",
                                 "",
-                                "// Configure authentication",
+                                "// Configure IP whitelist",
+                                "const ipWhitelist = [",
                                 {
                                     "Fn::Join": [
                                         "",
                                         [
-                                            "const authUser = '",
+                                            "    '",
                                             {
-                                                "Ref": "AuthUsername"
+                                                "Fn::Join": [
+                                                    "',\n    '",
+                                                    {
+                                                        "Ref": "AuthIpWhitelist"
+                                                    }
+                                                ]
                                             },
-                                            "';"
+                                            "'"
                                         ]
                                     ]
                                 },
-                                {
-                                    "Fn::Join": [
-                                        "",
-                                        [
-                                            "const authPass = '",
-                                            {
-                                                "Ref": "AuthPassword"
-                                            },
-                                            "';"
-                                        ]
-                                    ]
-                                },
+                                "];",
                                 "",
-                                "// Construct the Basic Auth string",
-                                "const authString = 'Basic ' + new Buffer(authUser + ':' + authPass).toString('base64');",
+                                "// Configure HTTP Basic credentials",
+                                "const credentials = [",
+                                {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "    '",
+                                            {
+                                                "Fn::Join": [
+                                                    "',\n    '",
+                                                    {
+                                                        "Ref": "AuthCredentials"
+                                                    }
+                                                ]
+                                            },
+                                            "'"
+                                        ]
+                                    ]
+                                },
+                                "].map(c => {",
+                                "    return 'Basic ' + new Buffer(c).toString('base64');",
+                                "});",
                                 "",
                                 "exports.handler = (event, context, callback) => {",
                                 "    // Get request and request headers",
                                 "    const request = event.Records[0].cf.request;",
                                 "    const headers = request.headers;",
                                 "",
-                                "    // Require Basic authentication",
-                                "    if (typeof headers.authorization == 'undefined' || headers.authorization[0].value != authString) {",
+                                "    // Handle IP whitelist",
+                                "    if (ipWhitelist.includes(request.clientIp)) {",
+                                "        callback(null, request);",
+                                "    }",
+                                "",
+                                "    // Handle HTTP Basic authentication",
+                                "    if (typeof headers.authorization == 'undefined' || !credentials.includes(headers.authorization[0].value)) {",
                                 "        const body = 'Unauthorized';",
                                 "        const response = {",
                                 "            status: '401',",
@@ -610,14 +650,34 @@
                 ]
             }
         },
-        "AuthUsername": {
+        "AuthEnabled": {
             "Value": {
-                "Ref": "AuthUsername"
+                "Ref": "AuthEnabled"
             }
         },
-        "AuthPassword": {
+        "AuthId": {
             "Value": {
-                "Ref": "AuthPassword"
+                "Ref": "AuthId"
+            }
+        },
+        "AuthIpWhitelist": {
+            "Value": {
+                "Fn::Join": [
+                    ", ",
+                    {
+                        "Ref": "AuthIpWhitelist"
+                    }
+                ]
+            }
+        },
+        "AuthCredentials": {
+            "Value": {
+                "Fn::Join": [
+                    ", ",
+                    {
+                        "Ref": "AuthCredentials"
+                    }
+                ]
             }
         }
     },
@@ -659,14 +719,20 @@
                 "yes",
                 "no"
             ],
-            "Description": "Enable HTTP Basic authentication which will protect all resources with username/password credentials."
+            "Description": "Enable authentication which will protect all resources with either IP whitelisting or HTTP Basic username/password credentials."
         },
-        "AuthUsername": {
-            "Type": "String"
+        "AuthId": {
+            "Type": "Number",
+            "Default": "1",
+            "Description": "IMPORTANT: You need to increment the version every time you change the IP whitelist or modify credentials"
         },
-        "AuthPassword": {
-            "Type": "String",
-            "Description": "Changing credentials once the stack is created: (1) disable authentication with a stack update (2) re-enable authentication and change credentials with a second update"
+        "AuthIpWhitelist": {
+            "Type": "CommaDelimitedList",
+            "Description": "Comma delimited list of whitelisted IP addresses (no HTTP Basic authentication)"
+        },
+        "AuthCredentials": {
+            "Type": "CommaDelimitedList",
+            "Description": "Comma delimited list of <username>:<password> credentials"
         }
     },
     "Conditions": {
