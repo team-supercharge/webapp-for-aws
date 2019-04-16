@@ -6,7 +6,7 @@
             "ParameterGroups": [
                 {
                     "Label": {
-                        "default": "CloudFront Distribution Settings"
+                        "default": "CloudFront Settings"
                     },
                     "Parameters": [
                         "PriceClass",
@@ -17,13 +17,14 @@
                 },
                 {
                     "Label": {
-                        "default": "Authentication"
+                        "default": "Access Control & Authentication"
                     },
                     "Parameters": [
+                        "VersionId",
+                        "AccessWhitelist",
                         "AuthEnabled",
-                        "AuthId",
-                        "AuthIpWhitelist",
-                        "AuthCredentials"
+                        "AuthCredentials",
+                        "AuthWhitelist"
                     ]
                 }
             ],
@@ -40,17 +41,20 @@
                 "SSLCertificateARN": {
                     "default": "SSL Certificate"
                 },
-                "AuthEnabled": {
-                    "default": "Do you want to enable authentication?"
-                },
-                "AuthId": {
+                "VersionId": {
                     "default": "Version ID"
                 },
-                "AuthIpWhitelist": {
-                    "default": "IP Whitelist"
+                "AccessWhitelist": {
+                    "default": "Access Control / Whitelist"
+                },
+                "AuthEnabled": {
+                    "default": "Authentication"
                 },
                 "AuthCredentials": {
-                    "default": "Credentials"
+                    "default": "Authentication / Credentials"
+                },
+                "AuthWhitelist": {
+                    "default": "Authentication / Whitelist"
                 }
             }
         },
@@ -331,7 +335,7 @@
                     "CustomErrorResponses": [
                         {
                             "ErrorCachingMinTTL": 0,
-                            "ErrorCode": 403,
+                            "ErrorCode": 404,
                             "ResponseCode": 200,
                             "ResponsePagePath": "/index.html"
                         }
@@ -363,22 +367,14 @@
                         "MinTTL": 0,
                         "MaxTTL": 31536000,
                         "DefaultTTL": 86400,
-                        "LambdaFunctionAssociations": {
-                            "Fn::If": [
-                                "IsAuthEnabled",
-                                [
-                                    {
-                                        "EventType": "viewer-request",
-                                        "LambdaFunctionARN": {
-                                            "Ref": "AuthVersion"
-                                        }
-                                    }
-                                ],
-                                {
-                                    "Ref": "AWS::NoValue"
+                        "LambdaFunctionAssociations": [
+                            {
+                                "EventType": "viewer-request",
+                                "LambdaFunctionARN": {
+                                    "Ref": "AuthVersion"
                                 }
-                            ]
-                        }
+                            }
+                        ]
                     }
                 }
             },
@@ -402,21 +398,35 @@
                         {
                             "Sid": "1",
                             "Action": [
-                                "s3:GetObject"
+                                "s3:GetObject",
+                                "s3:ListBucket"
                             ],
                             "Effect": "Allow",
-                            "Resource": {
-                                "Fn::Join": [
-                                    "",
-                                    [
-                                        "arn:aws:s3:::",
-                                        {
-                                            "Ref": "Source"
-                                        },
-                                        "/*"
+                            "Resource": [
+                                {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "arn:aws:s3:::",
+                                            {
+                                                "Ref": "Source"
+                                            }
+                                        ]
                                     ]
-                                ]
-                            },
+                                },
+                                {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "arn:aws:s3:::",
+                                            {
+                                                "Ref": "Source"
+                                            },
+                                            "/*"
+                                        ]
+                                    ]
+                                }
+                            ],
                             "Principal": {
                                 "CanonicalUser": {
                                     "Fn::GetAtt": [
@@ -477,8 +487,7 @@
                 "AWS::CloudFormation::Designer": {
                     "id": "ec4cb6a2-5b11-48ce-9b31-8f32c39704c8"
                 }
-            },
-            "Condition": "IsAuthEnabled"
+            }
         },
         "AuthFunction": {
             "Type": "AWS::Lambda::Function",
@@ -494,19 +503,19 @@
                             "AuthFunction",
                             "-",
                             {
-                                "Ref": "AuthId"
+                                "Ref": "VersionId"
                             }
                         ]
                     ]
                 },
-                "Description": "Authentication (IP whitelist or HTTP Basic) for a CloudFront distribution",
+                "Description": "Access Control & Authentication for a CloudFront distribution",
                 "Role": {
                     "Fn::GetAtt": [
                         "AuthExecutionRole",
                         "Arn"
                     ]
                 },
-                "Runtime": "nodejs6.10",
+                "Runtime": "nodejs8.10",
                 "Handler": "index.handler",
                 "Code": {
                     "ZipFile": {
@@ -515,8 +524,20 @@
                             [
                                 "'use strict';",
                                 "",
-                                "// Configure IP whitelist",
-                                "const ipWhitelist = [",
+                                "// Utils - https://tech.mybuilder.com/determining-if-an-ipv4-address-is-within-a-cidr-range-in-javascript/",
+                                "const ip4ToInt = ip =>",
+                                "    ip.split('.').reduce((int, oct) => (int << 8) + parseInt(oct, 10), 0) >>> 0;",
+                                "",
+                                "const isIp4InCidr = ip => cidr => {",
+                                "    const [range, bits = 32] = cidr.split('/');",
+                                "    const mask = ~(2 ** (32 - bits) - 1);",
+                                "    return (ip4ToInt(ip) & mask) === (ip4ToInt(range) & mask);",
+                                "};",
+                                "",
+                                "const isIp4InCidrs = (ip, cidrs) => cidrs.some(isIp4InCidr(ip));",
+                                "",
+                                "// Access Whitelist",
+                                "const accessWhitelist = [",
                                 {
                                     "Fn::Join": [
                                         "",
@@ -526,7 +547,7 @@
                                                 "Fn::Join": [
                                                     "',\n    '",
                                                     {
-                                                        "Ref": "AuthIpWhitelist"
+                                                        "Ref": "AccessWhitelist"
                                                     }
                                                 ]
                                             },
@@ -534,10 +555,28 @@
                                         ]
                                     ]
                                 },
-                                "];",
+                                "].filter(c => c !== '');",
                                 "",
-                                "// Configure HTTP Basic credentials",
-                                "const credentials = [",
+                                "// Auth on/off",
+                                {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "const authEnabled = ",
+                                            {
+                                                "Fn::If": [
+                                                    "IsAuthEnabled",
+                                                    "true",
+                                                    "false"
+                                                ]
+                                            },
+                                            ";"
+                                        ]
+                                    ]
+                                },
+                                "",
+                                "// Auth Credentials",
+                                "const authCredentials = [",
                                 {
                                     "Fn::Join": [
                                         "",
@@ -555,36 +594,71 @@
                                         ]
                                     ]
                                 },
-                                "].map(c => {",
-                                "    return 'Basic ' + new Buffer(c).toString('base64');",
-                                "});",
+                                "].filter(c => c !== '').map(c => 'Basic ' + new Buffer(c).toString('base64'));",
+                                "",
+                                "// Auth Whitelist",
+                                "const authWhitelist = [",
+                                {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "    '",
+                                            {
+                                                "Fn::Join": [
+                                                    "',\n    '",
+                                                    {
+                                                        "Ref": "AuthWhitelist"
+                                                    }
+                                                ]
+                                            },
+                                            "'"
+                                        ]
+                                    ]
+                                },
+                                "].filter(c => c !== '');",
                                 "",
                                 "exports.handler = (event, context, callback) => {",
-                                "    // Get request and request headers",
                                 "    const request = event.Records[0].cf.request;",
                                 "    const headers = request.headers;",
                                 "",
-                                "    // Handle IP whitelist",
-                                "    if (ipWhitelist.includes(request.clientIp)) {",
-                                "        callback(null, request);",
-                                "    }",
+                                "    const uri = request.uri;",
+                                "    const clientIp = request.clientIp;",
                                 "",
-                                "    // Handle HTTP Basic authentication",
-                                "    if (typeof headers.authorization == 'undefined' || !credentials.includes(headers.authorization[0].value)) {",
-                                "        const body = 'Unauthorized';",
+                                "    // Access Control",
+                                "    const accessWhitelisted = isIp4InCidrs(clientIp, accessWhitelist);",
+                                "",
+                                "    // Authentication",
+                                "    const authWhitelisted = isIp4InCidrs(clientIp, authWhitelist);",
+                                "    const authUnauthenticated = typeof headers.authorization == 'undefined' || !authCredentials.includes(headers.authorization[0].value);",
+                                "",
+                                "    if (!accessWhitelisted) {",
+                                "        console.log(`Blocking request for ${uri} from ${clientIp}`);",
+                                "",
+                                "        const response = {",
+                                "            status: '403',",
+                                "            statusDescription: 'Forbidden',",
+                                "            body: 'Forbidden'",
+                                "        };",
+                                "        callback(null, response);",
+                                "    }",
+                                "    else if (authEnabled && !authWhitelisted && authUnauthenticated) {",
+                                "        console.log(`Sending auth challenge for ${uri} from ${clientIp}`);",
+                                "",
                                 "        const response = {",
                                 "            status: '401',",
                                 "            statusDescription: 'Unauthorized',",
-                                "            body: body,",
+                                "            body: 'Unauthorized',",
                                 "            headers: {",
-                                "                'www-authenticate': [{key: 'WWW-Authenticate', value:'Basic'}]",
+                                "                'www-authenticate': [{ key: 'WWW-Authenticate', value: 'Basic' }]",
                                 "            },",
                                 "        };",
                                 "        callback(null, response);",
                                 "    }",
+                                "    else {",
+                                "        console.log(`Processing request for ${uri} from ${clientIp}`);",
                                 "",
-                                "    // Continue request processing if authentication passed",
-                                "    callback(null, request);",
+                                "        callback(null, request);",
+                                "    }",
                                 "};"
                             ]
                         ]
@@ -596,8 +670,7 @@
                     "id": "9bea0937-593c-4b39-8f35-0013b428ff94"
                 }
             },
-            "DependsOn": [],
-            "Condition": "IsAuthEnabled"
+            "DependsOn": []
         },
         "AuthVersion": {
             "Type": "AWS::Lambda::Version",
@@ -614,8 +687,7 @@
                     "id": "9b50090b-a8da-4ea7-987e-5afce3519212"
                 }
             },
-            "DependsOn": [],
-            "Condition": "IsAuthEnabled"
+            "DependsOn": []
         }
     },
     "Outputs": {
@@ -647,36 +719,6 @@
                 "Fn::GetAtt": [
                     "Edge",
                     "DomainName"
-                ]
-            }
-        },
-        "AuthEnabled": {
-            "Value": {
-                "Ref": "AuthEnabled"
-            }
-        },
-        "AuthId": {
-            "Value": {
-                "Ref": "AuthId"
-            }
-        },
-        "AuthIpWhitelist": {
-            "Value": {
-                "Fn::Join": [
-                    ", ",
-                    {
-                        "Ref": "AuthIpWhitelist"
-                    }
-                ]
-            }
-        },
-        "AuthCredentials": {
-            "Value": {
-                "Fn::Join": [
-                    ", ",
-                    {
-                        "Ref": "AuthCredentials"
-                    }
                 ]
             }
         }
@@ -712,6 +754,16 @@
             "Default": "",
             "Description": "ARN for custom SSL certificate to use for CNAMEs. Use the AWS Certificate Manager (ACM) service to provision and manage your certificates."
         },
+        "VersionId": {
+            "Type": "Number",
+            "Default": "1",
+            "Description": "IMPORTANT: You need to increment the version every time you change something in this section"
+        },
+        "AccessWhitelist": {
+            "Type": "CommaDelimitedList",
+            "Default": "0.0.0.0/0",
+            "Description": "IP ranges to enable access for. Comma delimited list in CIDR notation"
+        },
         "AuthEnabled": {
             "Type": "String",
             "Default": "no",
@@ -719,20 +771,15 @@
                 "yes",
                 "no"
             ],
-            "Description": "Enable authentication which will protect all resources with either IP whitelisting or HTTP Basic username/password credentials."
-        },
-        "AuthId": {
-            "Type": "Number",
-            "Default": "1",
-            "Description": "IMPORTANT: You need to increment the version every time you change the IP whitelist or modify credentials"
-        },
-        "AuthIpWhitelist": {
-            "Type": "CommaDelimitedList",
-            "Description": "Comma delimited list of whitelisted IP addresses (no HTTP Basic authentication)"
+            "Description": "Enable HTTP Basic authentication which will protect all resources with a predefined list of credentials"
         },
         "AuthCredentials": {
             "Type": "CommaDelimitedList",
             "Description": "Comma delimited list of <username>:<password> credentials"
+        },
+        "AuthWhitelist": {
+            "Type": "CommaDelimitedList",
+            "Description": "IP ranges that does not require authentication. Comma delimited list in CIDR notation"
         }
     },
     "Conditions": {
