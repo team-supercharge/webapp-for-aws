@@ -1,6 +1,6 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
-    "Description": "WebApp for AWS v3.0.0 - by Supercharge",
+    "Description": "WebApp for AWS v3.1.0 - by Supercharge",
     "Metadata": {
         "AWS::CloudFormation::Interface": {
             "ParameterGroups": [
